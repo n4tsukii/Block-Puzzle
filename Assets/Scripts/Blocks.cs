@@ -5,8 +5,14 @@ public class Blocks : MonoBehaviour
 {
     [SerializeField] private Block[] blocks;
     [SerializeField] private Board board;
+    [SerializeField] private Canvas lostCanvas;
+    private AudioManager audioManager;
     public int blockCount = 0;
     private int[] polyominoIndexes;
+    private void Awake() {
+        lostCanvas.gameObject.SetActive(false);
+        audioManager = GameObject.FindGameObjectWithTag("AudioManager").GetComponent<AudioManager>();
+    }
     void Start()
     {
         var blockWidth = (float)Board.Size/blocks.Length;
@@ -24,6 +30,7 @@ public class Blocks : MonoBehaviour
     }
     private void Generate()
     {
+        blockCount = 0;
         for (var i = 0; i < blocks.Length; ++i)
         {
             polyominoIndexes[i] = UnityEngine.Random.Range(0, Polyominos.Length);
@@ -53,7 +60,13 @@ public class Blocks : MonoBehaviour
             }
         }
         if (lose)
+        {
+            lostCanvas.gameObject.SetActive(true);
+            
+            audioManager.StopMusic();
+            audioManager.PlaySFX(audioManager.lose);
             Debug.Log("You lose!");
+        }
     }
     public void ResetBlockSortingOrder()
     {

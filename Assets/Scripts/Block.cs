@@ -127,7 +127,7 @@ public class Block : MonoBehaviour
         var polyominoCols = polyomino.GetLength(1);
 
         Unhighlight(polyominoCols, polyominoRows, polyomino);
-        
+
         HighlightCols(polyominoRows, polyomino, cols);
         HighlightRows(polyominoCols, polyomino, rows);
 

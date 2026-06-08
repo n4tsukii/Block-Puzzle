@@ -1,14 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Board : MonoBehaviour
 {
     public const int Size = 8;
     [SerializeField] private Cell cellPrefab;
     [SerializeField] private Transform cellsTransform;
+    [SerializeField] private Text scoreText;
+    [SerializeField] private Text highScoreText;
+    private AudioManager audioManager;
+    private int score;
+    private int highScore;
     
     private readonly Cell[,] cells = new Cell[Size, Size];
     private readonly int[,] data = new int[Size, Size]; // 0 empty, 1 hover, 2 normal
@@ -18,9 +25,15 @@ public class Board : MonoBehaviour
     private readonly List<int> highlightPolyominoCols = new();
     private readonly List<int> highlightPolyominoRows = new();
 
-
+    private void Awake() {
+        audioManager = GameObject.FindGameObjectWithTag("AudioManager").GetComponent<AudioManager>();
+    }
     void Start()
     {
+        highScore = PlayerPrefs.GetInt("HighScore", 0);
+        UpdateScoreText();
+        UpdateHighScoreText();
+
         for (var r = 0; r < Size; r++)
         {
             for (var c = 0; c < Size; c++)
@@ -31,7 +44,8 @@ public class Board : MonoBehaviour
             }
         }
     }
-    public void Hover(Vector2Int point, int polyominoIndex)
+
+    public bool Hover(Vector2Int point, int polyominoIndex)
     {
         var polyomino = Polyominos.Get(polyominoIndex);
         var polyominoRows = polyomino.GetLength(0);
@@ -60,6 +74,7 @@ public class Board : MonoBehaviour
             }
         }
 
+        return hoverPoints.Count > 0;
     }
 
     private void Unhighlight()
@@ -240,25 +255,55 @@ public class Board : MonoBehaviour
 
     private void Place(Vector2Int point, int polyominoCols, int polyominoRows)
     {
+        audioManager.PlaySFX(audioManager.placeBlock);
+        var placedCells = hoverPoints.Count;
         foreach (var hoverPoint in hoverPoints)
         {
             data[hoverPoint.y, hoverPoint.x] = 2;
             cells[hoverPoint.y, hoverPoint.x].Normal();
         }
-        ClearFullLines(point, polyominoCols, polyominoRows);
+        score += placedCells;
+        score += ClearFullLines(point, polyominoCols, polyominoRows) * 10;
+        UpdateHighScore();
+        UpdateScoreText();
         hoverPoints.Clear();
     }
 
-    private void ClearFullLines(Vector2Int point, int polyominoCols, int polyominoRows)
+    private void UpdateHighScore()
+    {
+        if (score <= highScore) return;
+
+        highScore = score;
+        PlayerPrefs.SetInt("HighScore", highScore);
+        PlayerPrefs.Save();
+        UpdateHighScoreText();
+    }
+
+    private void UpdateScoreText()
+    {
+        if (scoreText != null)
+        {
+            scoreText.text = score.ToString();
+        }
+    }
+
+    private void UpdateHighScoreText()
+    {
+        if (highScoreText != null)
+        {
+            highScoreText.text = highScore.ToString();
+        }
+    }
+
+    private int ClearFullLines(Vector2Int point, int polyominoCols, int polyominoRows)
     {
         FullLineCols(point.x, point.x + polyominoCols);
         FullLineRows(point.y, point.y + polyominoRows);
 
-        ClearFullLineCols();
-        ClearFullLineRows();
+        return ClearFullLineCols() + ClearFullLineRows();
     }
 
-    private void ClearFullLineRows()
+    private int ClearFullLineRows()
     {
         foreach(var r in fullLineRows)
         {
@@ -268,9 +313,13 @@ public class Board : MonoBehaviour
                 cells[r, c].Hide();
             }
         }
+        if (fullLineRows.Count > 0) {
+            audioManager.PlaySFX(audioManager.fillRow);
+        }
+        return fullLineRows.Count;
     }
 
-    private void ClearFullLineCols()
+    private int ClearFullLineCols()
     {
         foreach(var c in fullLineCols)
         {
@@ -280,6 +329,11 @@ public class Board : MonoBehaviour
                 cells[r, c].Hide();
             }
         }
+        if (fullLineCols.Count > 0)
+        {
+            audioManager.PlaySFX(audioManager.fillRow);
+        }
+        return fullLineCols.Count;
     }
 
     private void FullLineCols(int fromCol, int toColExclusive)
