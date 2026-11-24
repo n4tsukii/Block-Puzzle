@@ -70,6 +70,7 @@ public class Block : MonoBehaviour
 
     private void OnMouseDown()
     {
+        if (blocks.GameOver) return;
         inputPoint = mainCamera.ScreenToWorldPoint(Input.mousePosition);
 
         transform.localPosition = position + inputOffset;
@@ -88,6 +89,7 @@ public class Block : MonoBehaviour
     }
     private void OnMouseDrag()
     {
+        if (blocks.GameOver) return;
         var currentMousePostion = Input.mousePosition;
         if (currentMousePostion != previousMousePosition)
         {
@@ -107,7 +109,8 @@ public class Block : MonoBehaviour
         }
     }
     private void OnMouseUp()
-    { 
+    {
+        if (blocks.GameOver) return;
         previousMousePosition = Vector3.positiveInfinity;
 
         currentDragPoint = Vector2Int.RoundToInt((Vector2)transform.position - center);

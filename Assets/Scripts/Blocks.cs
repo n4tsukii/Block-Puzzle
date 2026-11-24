@@ -8,6 +8,7 @@ public class Blocks : MonoBehaviour
     [SerializeField] private Canvas lostCanvas;
     private AudioManager audioManager;
     public int blockCount = 0;
+    public bool GameOver { get; private set; }
     private int[] polyominoIndexes;
     private void Awake() {
         lostCanvas.gameObject.SetActive(false);
@@ -61,8 +62,9 @@ public class Blocks : MonoBehaviour
         }
         if (lose)
         {
+            GameOver = true;
             lostCanvas.gameObject.SetActive(true);
-            
+
             audioManager.StopMusic();
             audioManager.PlaySFX(audioManager.lose);
             Debug.Log("You lose!");
